@@ -131,6 +131,40 @@
     .encouragement.show {
       opacity: 1;
     }
+    #history-table-container {
+      margin: 36px 0 18px 0;
+      background: #fff9;
+      border-radius: 10px;
+      box-shadow: 0 2px 14px #0001;
+      padding: 12px;
+    }
+    #history-table {
+      border-collapse: collapse;
+      width: 100%;
+      font-size: 0.98em;
+      margin-top: 6px;
+    }
+    #history-table th, #history-table td {
+      border: 1px solid #eee;
+      padding: 7px 9px;
+      text-align: left;
+    }
+    #history-table th {
+      background: #f3e8ff;
+      color: #553c9a;
+      font-weight: bold;
+    }
+    #history-table tr.correct {
+      background: #e6fffa;
+    }
+    #history-table tr.incorrect {
+      background: #fff5f5;
+      color: #e53e3e;
+    }
+    #history-table td.result-cell {
+      font-weight: bold;
+      text-align: center;
+    }
   </style>
 </head>
 <body>
@@ -152,6 +186,23 @@
     <div class="encouragement" id="encouragement"></div>
   </div>
   <div id="loading">Loading words...</div>
+  <div id="history-table-container">
+    <h3 style="margin: 0 0 8px 0; color:#553c9a;">Word History</h3>
+    <table id="history-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Arabic</th>
+          <th>Your Answer</th>
+          <th>Correct Answer</th>
+          <th>Result</th>
+        </tr>
+      </thead>
+      <tbody id="history-table-body">
+        <!-- History rows go here -->
+      </tbody>
+    </table>
+  </div>
   <script>
     let words = [];
     let current = 0;
@@ -161,6 +212,7 @@
       total: 0,
       attemptedCurrent: false
     };
+    let history = [];
     const encouragementMessages = [
       "🌈 Great job!", "🚀 Awesome!", "👏 Well done!", "🎉 You rock!", "😃 Keep it up!", 
       "🌟 Fantastic!", "👍 Super!", "🥳 Brilliant!", "💡 Smart move!", "🏆 Winner!"
@@ -190,30 +242,58 @@
     }
     function checkAnswer() {
       if (stats.attemptedCurrent) return;
-      const userInput = document.getElementById('user-answer').value.trim().toLowerCase();
-      const correctAnswer = words[current].english.trim().toLowerCase();
+      const userInput = document.getElementById('user-answer').value.trim();
+      const userInputLower = userInput.toLowerCase();
+      const correctAnswer = words[current].english.trim();
+      const correctAnswerLower = correctAnswer.toLowerCase();
       stats.total++;
-      if (userInput === correctAnswer) {
+      let result, rowClass;
+      if (userInputLower === correctAnswerLower) {
         stats.correct++;
         document.getElementById('result').textContent = "✅ Correct!";
         document.getElementById('result').style.color = "#38a169";
         document.getElementById('encouragement').textContent =
           encouragementMessages[Math.floor(Math.random() * encouragementMessages.length)];
         document.getElementById('encouragement').classList.add('show');
+        result = "✅";
+        rowClass = "correct";
       } else {
         stats.incorrect++;
         document.getElementById('result').textContent = `❌ Incorrect. Correct: "${words[current].english}"`;
         document.getElementById('result').style.color = "#e53e3e";
         document.getElementById('encouragement').textContent = '';
         document.getElementById('encouragement').classList.remove('show');
+        result = "❌";
+        rowClass = "incorrect";
       }
       document.getElementById('result').classList.add('show');
       stats.attemptedCurrent = true;
       updateStats();
+      addHistory(words[current].arabic, userInput, words[current].english, result, rowClass);
     }
     function nextWord() {
       current = (current + 1) % words.length;
       showWord();
+    }
+    function addHistory(arabic, userAnswer, correctAnswer, result, rowClass) {
+      history.unshift({arabic, userAnswer, correctAnswer, result, rowClass});
+      renderHistory();
+    }
+    function renderHistory() {
+      const tbody = document.getElementById('history-table-body');
+      tbody.innerHTML = '';
+      history.forEach((item, idx) => {
+        const tr = document.createElement('tr');
+        tr.className = item.rowClass;
+        tr.innerHTML = `
+          <td>${history.length - idx}</td>
+          <td>${item.arabic}</td>
+          <td>${item.userAnswer}</td>
+          <td>${item.correctAnswer}</td>
+          <td class="result-cell">${item.result}</td>
+        `;
+        tbody.appendChild(tr);
+      });
     }
     function parseCSV(csv) {
       const lines = csv.trim().split('\n');
@@ -234,11 +314,11 @@
         document.getElementById('quiz').style.display = '';
         showWord();
         updateStats();
+        renderHistory();
       })
       .catch(err => {
         document.getElementById('loading').textContent = 'Failed to load words.csv';
       });
-
     // Keyboard navigation: Enter = Check, then Enter again = Next (if already checked)
     document.addEventListener('DOMContentLoaded', function() {
       const input = document.getElementById('user-answer');
