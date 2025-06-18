@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Arabic-English Vocabulary Quiz</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 500px; margin: 40px auto; }
+    .word { font-size: 2em; margin: 20px 0; }
+    .result { margin: 20px 0; font-weight: bold; }
+    input[type="text"] { font-size: 1.2em; padding: 6px; width: 90%; }
+    button { font-size: 1.1em; padding: 6px 12px; margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <h1>Arabic-English Vocabulary Quiz</h1>
+  <p>Type the correct English word for the given Arabic meaning.</p>
+  <div id="quiz" style="display:none;">
+    <div class="word" id="arabic-word"></div>
+    <input type="text" id="user-answer" autocomplete="off" placeholder="Type the English word" />
+    <div>
+      <button onclick="checkAnswer()">Check</button>
+      <button onclick="nextWord()">Next</button>
+    </div>
+    <div class="result" id="result"></div>
+  </div>
+  <div id="loading">Loading words...</div>
+  <script>
+    let words = [];
+    let current = 0;
+
+    function shuffle(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+    }
+
+    function showWord() {
+      document.getElementById('arabic-word').textContent = words[current].arabic;
+      document.getElementById('user-answer').value = '';
+      document.getElementById('result').textContent = '';
+      document.getElementById('user-answer').focus();
+    }
+
+    function checkAnswer() {
+      const userInput = document.getElementById('user-answer').value.trim().toLowerCase();
+      const correctAnswer = words[current].english.trim().toLowerCase();
+      if (userInput === correctAnswer) {
+        document.getElementById('result').textContent = "✅ Correct!";
+        document.getElementById('result').style.color = "green";
+      } else {
+        document.getElementById('result').textContent = `❌ Incorrect. Correct: ${words[current].english}`;
+        document.getElementById('result').style.color = "red";
+      }
+    }
+
+    function nextWord() {
+      current = (current + 1) % words.length;
+      showWord();
+    }
+
+    // CSV Parsing
+    function parseCSV(csv) {
+      const lines = csv.trim().split('\n');
+      const result = [];
+      for (let i = 1; i < lines.length; i++) {
+        const [english, arabic] = lines[i].split(',');
+        // Remove brackets and their contents from English word
+        const cleanEnglish = english.replace(/\s*\(.*?\)\s*/g, '').trim();
+        result.push({ english: cleanEnglish, arabic: arabic.trim() });
+      }
+      return result;
+    }
+
+    // Load words.csv
+    fetch('words.csv')
+      .then(response => response.text())
+      .then(data => {
+        words = parseCSV(data);
+        shuffle(words);
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('quiz').style.display = '';
+        showWord();
+      })
+      .catch(err => {
+        document.getElementById('loading').textContent = 'Failed to load words.csv';
+      });
+
+    // Allow pressing Enter to check answer
+    document.addEventListener('DOMContentLoaded', function() {
+      document.getElementById('user-answer').addEventListener('keydown', function(event) {
+        if (event.key === 'Enter') {
+          checkAnswer();
+        }
+      });
+    });
+  </script>
+</body>
+</html>
