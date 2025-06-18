@@ -7,6 +7,7 @@
     body { font-family: Arial, sans-serif; max-width: 500px; margin: 40px auto; }
     .word { font-size: 2em; margin: 20px 0; }
     .result { margin: 20px 0; font-weight: bold; }
+    .stats { margin: 20px 0; font-size: 1.1em; }
     input[type="text"] { font-size: 1.2em; padding: 6px; width: 90%; }
     button { font-size: 1.1em; padding: 6px 12px; margin-top: 10px; }
   </style>
@@ -14,6 +15,9 @@
 <body>
   <h1>Arabic-English Vocabulary Quiz</h1>
   <p>Type the correct English word for the given Arabic meaning.</p>
+  <div class="stats" id="stats">
+    Correct: 0 | Incorrect: 0 | Total Attempted: 0
+  </div>
   <div id="quiz" style="display:none;">
     <div class="word" id="arabic-word"></div>
     <input type="text" id="user-answer" autocomplete="off" placeholder="Type the English word" />
@@ -27,6 +31,17 @@
   <script>
     let words = [];
     let current = 0;
+    let stats = {
+      correct: 0,
+      incorrect: 0,
+      total: 0,
+      attemptedCurrent: false // Ensure each word is only counted once per shown
+    };
+
+    function updateStats() {
+      document.getElementById('stats').textContent =
+        `Correct: ${stats.correct} | Incorrect: ${stats.incorrect} | Total Attempted: ${stats.total}`;
+    }
 
     function shuffle(array) {
       for (let i = array.length - 1; i > 0; i--) {
@@ -40,18 +55,25 @@
       document.getElementById('user-answer').value = '';
       document.getElementById('result').textContent = '';
       document.getElementById('user-answer').focus();
+      stats.attemptedCurrent = false;
     }
 
     function checkAnswer() {
+      if (stats.attemptedCurrent) return; // Only count first attempt per word
       const userInput = document.getElementById('user-answer').value.trim().toLowerCase();
       const correctAnswer = words[current].english.trim().toLowerCase();
+      stats.total++;
       if (userInput === correctAnswer) {
+        stats.correct++;
         document.getElementById('result').textContent = "✅ Correct!";
         document.getElementById('result').style.color = "green";
       } else {
+        stats.incorrect++;
         document.getElementById('result').textContent = `❌ Incorrect. Correct: ${words[current].english}`;
         document.getElementById('result').style.color = "red";
       }
+      stats.attemptedCurrent = true;
+      updateStats();
     }
 
     function nextWord() {
@@ -81,6 +103,7 @@
         document.getElementById('loading').style.display = 'none';
         document.getElementById('quiz').style.display = '';
         showWord();
+        updateStats();
       })
       .catch(err => {
         document.getElementById('loading').textContent = 'Failed to load words.csv';
