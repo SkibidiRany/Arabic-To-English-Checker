@@ -3,29 +3,153 @@
 <head>
   <meta charset="UTF-8">
   <title>Arabic-English Vocabulary Quiz</title>
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+Bhaijaan+2:wght@700&display=swap" rel="stylesheet">
   <style>
-    body { font-family: Arial, sans-serif; max-width: 500px; margin: 40px auto; }
-    .word { font-size: 2em; margin: 20px 0; }
-    .result { margin: 20px 0; font-weight: bold; }
-    .stats { margin: 20px 0; font-size: 1.1em; }
-    input[type="text"] { font-size: 1.2em; padding: 6px; width: 90%; }
-    button { font-size: 1.1em; padding: 6px 12px; margin-top: 10px; }
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 500px;
+      margin: 40px auto;
+      background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+      min-height: 100vh;
+      padding: 0 10px;
+    }
+    h1 {
+      text-align: center;
+      color: #333;
+      margin-bottom: 10px;
+      font-size: 2.1em;
+      letter-spacing: 1px;
+      text-shadow: 1px 1px 2px #fff;
+    }
+    .stats {
+      margin: 16px 0;
+      font-size: 1.1em;
+      background: #fff8ee;
+      border-radius: 16px;
+      box-shadow: 0 2px 8px #0001;
+      padding: 14px 18px;
+      color: #555;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: bold;
+      letter-spacing: 1px;
+    }
+    .progress-bar {
+      width: 100%;
+      height: 12px;
+      background: #eee;
+      border-radius: 8px;
+      overflow: hidden;
+      margin: 7px 0 0 0;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #ffecd2 0%, #fcb69f 100%);
+      width: 0%;
+      transition: width 0.5s;
+    }
+    #quiz {
+      background: #fff6;
+      border-radius: 18px;
+      box-shadow: 0 4px 24px #0002;
+      padding: 28px 22px 36px 22px;
+      margin-top: 14px;
+    }
+    .word {
+      font-size: 2.1em;
+      margin: 18px 0 22px 0;
+      text-align: center;
+      color: #2a2a2a;
+      font-family: 'Baloo Bhaijaan 2', Arial, sans-serif;
+      letter-spacing: 2px;
+      background: #fff3;
+      border-radius: 9px;
+      padding: 7px 0;
+      box-shadow: 0 1px 8px #0001;
+    }
+    .result {
+      margin: 20px 0 0 0;
+      font-weight: bold;
+      font-size: 1.3em;
+      text-align: center;
+      min-height: 1.6em;
+      opacity: 0;
+      transition: opacity 0.5s;
+    }
+    .result.show {
+      opacity: 1;
+    }
+    input[type="text"] {
+      font-size: 1.3em;
+      padding: 10px;
+      width: 95%;
+      border-radius: 8px;
+      border: 1px solid #d5aaff;
+      margin-bottom: 12px;
+      box-shadow: 0 0 8px #d5aaff33;
+      transition: border 0.3s;
+    }
+    input[type="text"]:focus {
+      border: 2px solid #9f7aea;
+      outline: none;
+      background: #f9f6ff;
+    }
+    button {
+      font-size: 1.1em;
+      padding: 8px 20px;
+      margin-top: 8px;
+      margin-right: 10px;
+      border-radius: 8px;
+      border: none;
+      background: linear-gradient(90deg, #ffecd2 0%, #fcb69f 100%);
+      box-shadow: 0 2px 6px #0001;
+      cursor: pointer;
+      transition: background 0.3s, transform 0.2s;
+      font-weight: bold;
+      letter-spacing: 1px;
+    }
+    button:hover {
+      background: linear-gradient(90deg, #fcb69f 0%, #ffecd2 100%);
+      transform: scale(1.07);
+    }
+    #loading {
+      text-align: center;
+      margin-top: 24px;
+      font-size: 1.2em;
+      color: #8b5cf6;
+    }
+    .encouragement {
+      font-size: 1.1em;
+      margin-top: 8px;
+      color: #38a169;
+      text-align: center;
+      min-height: 1.4em;
+      opacity: 0;
+      transition: opacity 0.5s;
+    }
+    .encouragement.show {
+      opacity: 1;
+    }
   </style>
 </head>
 <body>
-  <h1>Arabic-English Vocabulary Quiz</h1>
-  <p>Type the correct English word for the given Arabic meaning.</p>
+  <h1>🌟 Arabic-English Quiz Game! 🌟</h1>
   <div class="stats" id="stats">
-    Correct: 0 | Incorrect: 0 | Total Attempted: 0
+    <span id="scoreboard">Correct: 0</span>
+    <span id="failboard">Incorrect: 0</span>
+    <span id="totalboard">Total: 0</span>
   </div>
+  <div class="progress-bar"><div class="progress-bar-fill" id="progress-bar-fill"></div></div>
   <div id="quiz" style="display:none;">
     <div class="word" id="arabic-word"></div>
     <input type="text" id="user-answer" autocomplete="off" placeholder="Type the English word" />
     <div>
-      <button onclick="checkAnswer()">Check</button>
-      <button onclick="nextWord()">Next</button>
+      <button onclick="checkAnswer()">✅ Check</button>
+      <button onclick="nextWord()">➡️ Next</button>
     </div>
     <div class="result" id="result"></div>
+    <div class="encouragement" id="encouragement"></div>
   </div>
   <div id="loading">Loading words...</div>
   <script>
@@ -35,52 +159,64 @@
       correct: 0,
       incorrect: 0,
       total: 0,
-      attemptedCurrent: false // Ensure each word is only counted once per shown
+      attemptedCurrent: false
     };
-
+    const encouragementMessages = [
+      "🌈 Great job!", "🚀 Awesome!", "👏 Well done!", "🎉 You rock!", "😃 Keep it up!", 
+      "🌟 Fantastic!", "👍 Super!", "🥳 Brilliant!", "💡 Smart move!", "🏆 Winner!"
+    ];
     function updateStats() {
-      document.getElementById('stats').textContent =
-        `Correct: ${stats.correct} | Incorrect: ${stats.incorrect} | Total Attempted: ${stats.total}`;
+      document.getElementById('scoreboard').textContent = `✅ Correct: ${stats.correct}`;
+      document.getElementById('failboard').textContent = `❌ Incorrect: ${stats.incorrect}`;
+      document.getElementById('totalboard').textContent = `📊 Total: ${stats.total}`;
+      // Update progress bar
+      const percent = words.length ? Math.round((stats.total / words.length) * 100) : 0;
+      document.getElementById('progress-bar-fill').style.width = `${percent}%`;
     }
-
     function shuffle(array) {
       for (let i = array.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [array[i], array[j]] = [array[j], array[i]];
       }
     }
-
     function showWord() {
       document.getElementById('arabic-word').textContent = words[current].arabic;
       document.getElementById('user-answer').value = '';
       document.getElementById('result').textContent = '';
+      document.getElementById('result').classList.remove('show');
+      document.getElementById('encouragement').textContent = '';
+      document.getElementById('encouragement').classList.remove('show');
       document.getElementById('user-answer').focus();
       stats.attemptedCurrent = false;
     }
-
     function checkAnswer() {
-      if (stats.attemptedCurrent) return; // Only count first attempt per word
+      // Only count first attempt per word
+      if (stats.attemptedCurrent) return;
       const userInput = document.getElementById('user-answer').value.trim().toLowerCase();
       const correctAnswer = words[current].english.trim().toLowerCase();
       stats.total++;
       if (userInput === correctAnswer) {
         stats.correct++;
         document.getElementById('result').textContent = "✅ Correct!";
-        document.getElementById('result').style.color = "green";
+        document.getElementById('result').style.color = "#38a169";
+        document.getElementById('encouragement').textContent =
+          encouragementMessages[Math.floor(Math.random() * encouragementMessages.length)];
+        document.getElementById('encouragement').classList.add('show');
       } else {
         stats.incorrect++;
-        document.getElementById('result').textContent = `❌ Incorrect. Correct: ${words[current].english}`;
-        document.getElementById('result').style.color = "red";
+        document.getElementById('result').textContent = `❌ Incorrect. Correct: "${words[current].english}"`;
+        document.getElementById('result').style.color = "#e53e3e";
+        document.getElementById('encouragement').textContent = '';
+        document.getElementById('encouragement').classList.remove('show');
       }
-      stats.attemptedCurrent = true;
+      document.getElementById('result').classList.add('show');
       updateStats();
+      stats.attemptedCurrent = true;
     }
-
     function nextWord() {
       current = (current + 1) % words.length;
       showWord();
     }
-
     // CSV Parsing
     function parseCSV(csv) {
       const lines = csv.trim().split('\n');
@@ -93,7 +229,6 @@
       }
       return result;
     }
-
     // Load words.csv
     fetch('words.csv')
       .then(response => response.text())
@@ -108,7 +243,6 @@
       .catch(err => {
         document.getElementById('loading').textContent = 'Failed to load words.csv';
       });
-
     // Allow pressing Enter to check answer
     document.addEventListener('DOMContentLoaded', function() {
       document.getElementById('user-answer').addEventListener('keydown', function(event) {
